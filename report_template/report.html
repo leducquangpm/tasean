@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8"
+        src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@phylocanvas/phylocanvas.gl@latest/dist/bundle.min.js"></script>
+
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.datatables.net/buttons/1.6.5/css/buttons.dataTables.min.css">
+        <style>
+        body{
+          max-width: 1024px;
+          margin: auto;
+        }
+        </style>
+</head>
+
+<body>
+    <h1>Target Sequence Analysis Report</h1>
+    <h2>Sequence: b068931cc450442b63f5b3d276ea4297 (d5d3db1765287eef77d7927cc956f50a)</h2>
+    <h2>Samples: a43c1b0aa53a0c908810c06ab1ff3967</h2>
+    <div>07cc694b9b3fc636710fa08b6922c42b</div>
+    <div>
+        <h3>Search result</h3>
+        <div>
+            <table id="hits_table" class="display">
+            </table>
+        </div>
+    </div>
+
+    <div>
+        <h3>DNA Mutations</h3>
+        <div>
+            <canvas  id="dna_chart"></canvas>
+        </div>
+        <div>
+            <canvas  width="1100px" id="dna_bar"></canvas>
+        </div>
+        <div>
+
+              <table id="dna_table" class="display">
+              </table>
+        </div>
+    </div>
+    <div id="prot_panel">
+        <h3>Protein Mutations</h3>
+        <div>
+            <canvas  id="prot_chart"></canvas>
+        </div>
+        <div>
+            <canvas  width="1100px" id="prot_bar"></canvas>
+        </div>
+        <div>
+
+              <table id="prot_table" class="display">
+              </table>
+        </div>
+    </div>
+    <div>
+        <h3>Sequences type</h3>
+        <div style="max-height:500px;">
+            <canvas height="500px" id="type_chart"></canvas>
+        </div>
+        <div>
+
+              <table id="type_table" class="display">
+              </table>
+        </div>
+    </div>
+    <div>
+        <h3>Phylogeny tree</h3>
+        <div id="phylotree"></div>
+    </div>
+    <script>
+    var percentColors = [
+      { pct: 0.0, color: { r: 0xff, g: 0x00, b: 0 } },
+      { pct: 0.5, color: { r: 0xff, g: 0xff, b: 0 } },
+      { pct: 1.0, color: { r: 0x00, g: 0xff, b: 0 } } ];
+
+    var getColorForPercentage = function(pct) {
+      for (var i = 1; i < percentColors.length - 1; i++) {
+        if (pct < percentColors[i].pct) {
+          break;
+        }
+      }
+      var lower = percentColors[i - 1];
+      var upper = percentColors[i];
+      var range = upper.pct - lower.pct;
+      var rangePct = (pct - lower.pct) / range;
+      var pctLower = 1 - rangePct;
+      var pctUpper = rangePct;
+      var color = {
+        r: Math.floor(lower.color.r * pctLower + upper.color.r * pctUpper),
+        g: Math.floor(lower.color.g * pctLower + upper.color.g * pctUpper),
+        b: Math.floor(lower.color.b * pctLower + upper.color.b * pctUpper)
+      };
+      return 'rgb(' + [color.r, color.g, color.b].join(',') + ')';
+
+    };
+      function drawBarMapMutation(canvasid,mutations, sequence_len){
+        var canvas = document.getElementById(canvasid);
+        var ctx = canvas.getContext("2d");
+        var margin_side=20;
+        var width = canvas.width-2*margin_side;
+        var height=30;
+        var margin_side=20;
+        ctx.fillStyle = "#333";
+        ctx.strokeRect(margin_side, 0, 1000, height);
+        ctx.font = "12px Arial";
+        var pixel_size=sequence_len/1000;
+        var number_tick=11;
+        var step=Math.round(sequence_len/number_tick)-Math.round(sequence_len/number_tick)%10;
+        let min_width=(pixel_size>1)?1:1/pixel_size;
+        console.log("min width:"+min_width);
+        for(var i =0;i<mutations.length;i++){
+            let pos=mutations[i].pos/pixel_size-1;
+            console.log(pos);
+
+            ctx.fillStyle = getColorForPercentage(mutations[i].value);
+            ctx.fillRect(margin_side+pos, 0, min_width, height);
+        }
+        var legend=0;
+        ctx.fillStyle="#333";
+        for(var i =0;i<number_tick;i++){
+            ctx.fillRect(margin_side+legend/pixel_size, 30, 1, 3);
+            ctx.fillText(legend, margin_side+legend/pixel_size-5, 50);
+            legend+=step;
+        }
+        ctx.fillRect(margin_side+(sequence_len)/pixel_size, 30, 1, 3);
+        ctx.fillText(sequence_len, margin_side+sequence_len/pixel_size-5, 50);
+
+      }
+        $(document).ready(function () {
+            var mode="t6678gghjuyt334567abe5707ediop";
+            if (mode=="gene"){
+              document.getElementById("prot_panel").style.display = "block";
+            }
+            else{
+                document.getElementById("prot_panel").style.display = "none";
+            }
+            var data_hits=f09328d495fa622700aabe5707edf00b;
+            $('#hits_table').DataTable({
+                data: data_hits,
+                columns: [
+                    { title: "Sample" },
+                    { title: "Position" },
+                    { title: "Hits" },
+                    { title: "Coverage" },
+                    {title:"Protein mutation"},
+                    { title: "DNA mutation" },
+                    { title: "Sequentype" },
+                    {title:"Note"}
+                ]
+            });
+            var data_dna=5427e0bf847d7c379a1d2e09a0b45f8a;
+            var dna_lenght=12340bf847d7c379a1d2e09a0b2345;
+            $('#dna_table').DataTable({
+                data: data_dna,
+                columns: [
+                    { title: "Mutations" },
+                    { title: "Count" },
+                    { title: "Fequency" }
+
+                ]
+            });
+            dna_labels=[];
+            dna_data=[];
+            var databar=[];
+            for (var i=0;i<data_dna.length;i++){
+              dna_labels.push(data_dna[i][0]);
+              dna_data.push(data_dna[i][1]);
+              var matches = data_dna[i][0].match(/\d+/g);
+              if (matches.length>0){
+                databar.push({pos:matches[0],value:1-data_dna[i][2]});
+              }
+            }
+            //sort
+            //sort
+
+            for (var i=0;i<dna_labels.length-1;i++){
+              for (var j=i+1;j<dna_labels.length;j++){
+ 		             var  pos_i= dna_labels[i].match(/\d+/g)[0];
+                 var  pos_j= dna_labels[j].match(/\d+/g)[0];
+
+                  if(parseInt(pos_i)>parseInt(pos_j)){
+
+
+                    var t=dna_labels[i];
+                    dna_labels[i]=dna_labels[j];
+                    dna_labels[j]=t;
+                    t=dna_data[i];
+                    dna_data[i]=dna_data[j];
+                    dna_data[j]=t;
+                  }
+              }
+
+            }
+
+            drawBarMapMutation("dna_bar",databar,dna_lenght);
+            var ctx_dna = document.getElementById('dna_chart');
+            var dnaChart = new Chart(ctx_dna, {
+              type: 'bar',
+              data: {
+                labels: dna_labels,
+                datasets: [{
+                  label: 'Frequencies  of DNA mutations',
+                  data: dna_data,
+                  backgroundColor: [
+                    'rgba(255, 99, 132, 0.5)',
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(255, 206, 86, 0.5)',
+                    'rgba(75, 192, 192, 0.5)',
+                    'rgba(153, 102, 255, 0.5)',
+                    'rgba(255, 159, 64, 0.5)'
+                  ],
+                  borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                  ],
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                scales: {
+                  y: {
+                    beginAtZero: true
+                  }
+                }
+              }
+            });
+
+            var data_prot=02a42284998e2ce6a3776ad3696dceed;
+            var prot_lenght=abcdbf847d7c379a1d2e09a0b2jkl;
+            $('#prot_table').DataTable({
+                data: data_prot,
+                columns: [
+                    { title: "Mutations" },
+                    { title: "Count" },
+                    { title: "Fequency" }
+
+                ]
+            });
+
+            prot_labels=[];
+            prot_data=[];
+              var protbar=[];
+            for (var i=0;i<data_prot.length;i++){
+              prot_labels.push(data_prot[i][0]);
+              prot_data.push(data_prot[i][1]);
+              var matches = data_prot[i][0].match(/\d+/g);
+              if (matches.length>0){
+                protbar.push({pos:matches[0],value:1-data_prot[i][2]});
+              }
+            }
+            for (var i=0;i<prot_labels.length-1;i++){
+              for (var j=i+1;j<prot_labels.length;j++){
+                 var  pos_i= prot_labels[i].match(/\d+/g)[0];
+                 var  pos_j= prot_labels[j].match(/\d+/g)[0];
+
+                  if(parseInt(pos_i)>parseInt(pos_j)){
+
+
+                    var t=prot_labels[i];
+                    prot_labels[i]=prot_labels[j];
+                    prot_labels[j]=t;
+                    t=prot_data[i];
+                    prot_data[i]=prot_data[j];
+                    prot_data[j]=t;
+                  }
+              }
+
+            }
+              drawBarMapMutation("prot_bar",protbar,prot_lenght);
+            var ctx_prot = document.getElementById('prot_chart');
+            var myChart = new Chart(ctx_prot, {
+              type: 'bar',
+              data: {
+                labels: prot_labels,
+                datasets: [{
+                  label: 'Frequencies  of protein mutations',
+                  data: prot_data,
+                  backgroundColor: [
+                    'rgba(255, 99, 132, 0.5)',
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(255, 206, 86, 0.5)',
+                    'rgba(75, 192, 192, 0.5)',
+                    'rgba(153, 102, 255, 0.5)',
+                    'rgba(255, 159, 64, 0.5)'
+                  ],
+                  borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                  ],
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                scales: {
+                  y: {
+                    beginAtZero: true
+                  }
+                }
+              }
+            });
+            var data_type=599dcce2998a6b40b1e38e8c6006cb0a;
+            $('#type_table').DataTable({
+                data: data_type,
+                columns: [
+                    { title: "Type" },
+                    { title: "Count" },
+                    { title: "Fequency" },
+                    { title: "DNA mutation" },
+                    { title: "Protein mutation" }
+                ]
+            });
+            type_labels=[];
+            type_data=[];
+            for (var i=0;i<data_type.length;i++){
+
+              type_labels.push(data_type[i][0]);
+                type_data.push(data_type[i][1]);
+            }
+
+            var ctx_type = document.getElementById('type_chart');
+            console.log(type_labels);
+            console.log(type_data);
+            var typeChart = new Chart(ctx_type, {
+              type: 'pie',
+              data: {
+                labels: type_labels,
+                datasets: [{
+                  label: 'Portions of sequence types ',
+                  backgroundColor: [
+                    "#2ecc71",
+                    "#3498db",
+                    "#95a5a6",
+                    "#9b59b6",
+                    "#f1c40f",
+                    "#e74c3c",
+                    "#34495e"
+                  ],
+                  data:type_data
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: 'top',
+                  },
+                  title: {
+                    display: true,
+                    text: 'Portion of sequence  types'
+                  }
+                }
+              },
+            });
+            var phylodata=`55f4634c7ac2899801eac4ced5b8120e`;
+            const tree = new phylocanvas.PhylocanvasGL(
+              document.querySelector("#phylotree"),
+              {
+                size: { width: 1024, height: 600 },
+                source:phylodata,
+                type: phylocanvas.TreeTypes.Rectangular,
+                showLabels: true,
+                alignLabels: true,
+                showLeafLabels: true,
+                interactive:true
+
+              },
+            );
+        });
+    </script>
+</body>
+
+</html>
