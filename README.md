@@ -1,2 +1,2 @@
 # tasean
-Target Sequence Annalysis
+Target Sequence Analysis
