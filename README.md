@@ -19,4 +19,4 @@ Tasean is a handy tool for checking a certain sequence in a collection of viral 
  	-g,--genomes: all genomes in fasta format (each samples is a sequence)
  	-o,--output: output folder 
 example:
- `python tasean.py --gene -s spike.fasta -g Delta1000.fasta -o data
+ `python tasean.py --gene -s spike.fasta -g Delta1000.fasta -o data`
