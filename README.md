@@ -10,7 +10,10 @@ Tasean is a handy tool for checking a certain sequence in a collection of viral 
 - fastTree 2.1
 - biopython
 #### Install via conda:
+`conda create -n tasean`
+`conda activate tasean`
 `conda install -y -c conda-forge -c bioconda -c anaconda -c etetoolkit -c defaults --file requirements.txt`
+
 ## Usage
 `python tasean.py [--gene] -s /path/target/sequence.fasta -g /path/to/genome/genomes.fasta -o /output/folder`
 
