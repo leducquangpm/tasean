@@ -11,7 +11,9 @@ Tasean is a handy tool for checking a certain sequence in a collection of viral 
 - biopython
 #### Install via conda:
 `conda create -n tasean`
+
 `conda activate tasean`
+
 `conda install -y -c conda-forge -c bioconda -c anaconda -c etetoolkit -c defaults --file requirements.txt`
 
 ## Usage
