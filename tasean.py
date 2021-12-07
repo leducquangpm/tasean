@@ -255,7 +255,7 @@ def getDNAMuString( pos, ref, aln):
         if num_delete==1:
             return str(pos+len(aln))+'del'+ref[len(aln):]
         else:
-            return str(pos+len(aln))+'_'+str(pos+len(aln)+num_delete)+'del'
+            return str(pos+len(aln))+'_'+str(pos+len(aln)+num_delete-1)+'del'
     else:
         num_add=len(aln)-len(ref)
         base_add=aln[len(ref):]
@@ -350,10 +350,12 @@ def makeConsensus(scafold,gene):
 
     return consensus
 def makePhylo(sequence_type,output,gene_ref):
-    if not os.path.exists(output+'/phylo'):
-        os.makedirs(output+'/phylo')
+    output_phylo=os.path.join(output,'phylo')
+    if not os.path.exists(output_phylo):
+        os.makedirs(output_phylo)
+
     #print(sequence_type)
-    f = open(output+'/sequencetypes.fasta', "w")
+    f = open(output_phylo+'/sequencetypes.fasta', "w")
     for k in sequence_type.keys():
 
         f.write(">"+sequence_type[k]['type']+'\n')
@@ -364,12 +366,16 @@ def makePhylo(sequence_type,output,gene_ref):
             f.write(str(record.seq)+'\n')
     f.close()
     cmd = './muscle  -in {}  -out {}'.format(
-       output+'/sequencetypes.fasta',output+'/sequencetypes.afa'
+       output_phylo+'/sequencetypes.fasta',output_phylo+'/sequencetypes.afa'
         )
     print(cmd)
     os.system(cmd)
-    cmd='FastTree {} > {} '.format(output+'/sequencetypes.afa',output+'/sequencetypes.tree')
+    cmd='FastTree {} > {} '.format(output_phylo+'/sequencetypes.afa',output+'/sequencetypes.tree')
     os.system(cmd)
+    try:
+        shutil.rmtree(output_phylo)
+    except OSError as e:
+        print("Error: %s - %s." % (e.filename, e.strerror))
     return output+'/sequencetypes.tree'
 def doStatistic(report):
     set_prot_mu={}
@@ -457,7 +463,7 @@ def exportReport(report,output,phylo,gene_ref,samles,gene_name,dna_len,prot_len,
     str_hit_data=''
 
     for r in report:
-        print('coverage:'+str(r['coverage']))
+        #print('coverage:'+str(r['coverage']))
         coverage=str(round(r['coverage']*100, 5))+'%'
         f.write(r['sid']+'\t'+str(r['pos'])+'\t'+str(r['hit'])+'\t'+coverage+'\t'+r['prot']+'\t'+r['dna']+'\t'+r['seq']+'\t'+r['note']+'\n')
         str_hit_data=str_hit_data+'["'+r['sid']+'","'+str(r['pos'])+'","'+str(r['hit'])+'","'+coverage+'","'+r['prot'].replace(',',', ')+'","'+r['dna'].replace(',',', ')+'","'+r['seq']+'","'+r['note']+'"],'
@@ -562,6 +568,10 @@ def pipeline(args):
                     SeqIO.write(record, output_handle, "fasta")
 
                 report.append({'sid':record.id,'prot':str_mut[:-1],'dna':str_dna_mut[:-1],'pos':loc['pos'],'hit':len(loc['hit']),'coverage':loc['coverage'],'seq':sequence_type[str_md5]['type'],'note':loc['note']})
+            try:
+                shutil.rmtree(os.path.join(output,record_f))
+            except OSError as e:
+                print("Error: %s - %s." % (e.filename, e.strerror))
     phylofile=makePhylo(sequence_type,output,gene_ref)
     #print(report)
     exportReport(report,output,phylofile,gene_ref,sample_seqs,gene_name,len(str_dna),len_prot,mode)
