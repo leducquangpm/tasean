@@ -303,9 +303,14 @@ def getGeneLocation(hits,gene):
                 send=send+int(item[0])
             if item[1]=='I':
                 send=send-int(item[0])
-        hit['pos']= int(items[0][0]  )
-        hit['ss']=int(h['ss'])
-        hit['send']=send
+        if items[0][1]=='S':
+            hit['pos'] = int(items[0][0])
+        elif items[0][1]=='M':
+            hit['pos'] = 1
+        else:
+            hit['pos'] = 1
+        hit['ss'] = int(h['ss'])
+        hit['send'] = send
         list_hit.append(hit)
     list_hit_sorted=sorted(list_hit, key=lambda k: k['ss'])
     if not len(list_hit_sorted)>0:
