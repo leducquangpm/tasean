@@ -279,13 +279,13 @@ def readSAM(samfile):
 
 
     return hit
-def getGeneLocation(hit,gene):
+def getGeneLocation(hits,gene):
     #parse CIGAR string
     loc={}
     loc['note']=''
     list_hit=[]
     total_len=0
-    for h in hit:
+    for h in hits:
         hit={}
         cigar=Cigar(h['cigar'])
         items=list(cigar.items())
@@ -568,10 +568,10 @@ def pipeline(args):
                     SeqIO.write(record, output_handle, "fasta")
 
                 report.append({'sid':record.id,'prot':str_mut[:-1],'dna':str_dna_mut[:-1],'pos':loc['pos'],'hit':len(loc['hit']),'coverage':loc['coverage'],'seq':sequence_type[str_md5]['type'],'note':loc['note']})
-            try:
-                shutil.rmtree(os.path.join(output,record_f))
-            except OSError as e:
-                print("Error: %s - %s." % (e.filename, e.strerror))
+            #try:
+            #    shutil.rmtree(os.path.join(output,record_f))
+            #except OSError as e:
+            #    print("Error: %s - %s." % (e.filename, e.strerror))
     phylofile=makePhylo(sequence_type,output,gene_ref)
     #print(report)
     exportReport(report,output,phylofile,gene_ref,sample_seqs,gene_name,len(str_dna),len_prot,mode)
