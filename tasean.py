@@ -540,7 +540,7 @@ def pipeline(args):
         os.makedirs(output)
     with open(sample_seqs) as handle:
         for record in SeqIO.parse(handle, "fasta"):
-            record_f=record.id.replace('/','_')
+            record_f=record.id.replace('/','_').replace('|','_')
             if not os.path.exists(os.path.join(output,record_f)):
                 os.makedirs(os.path.join(output,record_f))
             with open(os.path.join(output,record_f)+'/'+record_f+".fasta", "w") as output_handle:
