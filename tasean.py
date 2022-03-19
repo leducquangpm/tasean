@@ -116,7 +116,7 @@ def calVariants(ref_fa,query_fa,output):
         os.makedirs(temp_folder)
 
     #alignment
-    cmd = 'bwa mem {ref} {query} > {output}/aln-se.sam'.format(
+    cmd = 'bwa mem -d 105 {ref} {query} > {output}/aln-se.sam'.format(
         ref=ref_fa,
         query=query_fa,
         output=output
