@@ -1,8 +1,8 @@
-python==3.7.10
+python==3.6.7
 bwa
 biopython
 samtools==1.9
-bcftools
+bcftools==1.9
 pysam
 cigar
 PyVCF

@@ -138,11 +138,12 @@ def calVariants(ref_fa,query_fa,output):
 
     #generate raw bcf
     #cmd = 'samtools mpileup -g -f {ref} {output}/aln-filtered-sorted.bam | bcftools call -mv -Ov > {output}/variants.vcf'.format(
-    cmd = 'samtools mpileup -g  -f {ref} {temp}/aln-sorted.bam | bcftools call -mv -Ov > {output}/variants.vcf'.format(
+    cmd = 'bcftools mpileup -f {ref} {temp}/aln-sorted.bam | bcftools call -mv  -Ov > {output}/variants.vcf'.format(
         temp=temp_folder,
         ref=ref_fa,
         output=output
     )
+
     os.system(cmd)
 
 
